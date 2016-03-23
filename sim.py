@@ -1,5 +1,5 @@
 from time import sleep
-from Tkinter import *
+from visual import *
 import random
 import string
 import datetime
@@ -10,10 +10,12 @@ cell_width = 5
 cell_height = 4
 cell_scale = 200
 padding = 20
-inner_padding = 5
-hidden_color = "red"
-found_color = "green"
-robot_color = "blue"
+inner_padding = 10
+
+standard_color = color.black
+hidden_color = color.red
+found_color = color.green
+robot_color = color.blue
 
 object_marker = 10
 
@@ -23,24 +25,24 @@ start_col = 2
 robot_pos = (start_row, start_col)
 
 def draw_grid(grid): 
-
-    print "Drawing Grid"
     rows, cols = grid.shape
-    print "Width:", canvas['width'], "Height:", canvas['height']
-    print "Rows:", rows, ", Cols:", cols
 
     # Draw lines
     for y in range(rows + 1):
-        canvas.create_line(padding, y * cell_scale + padding, cols*cell_scale + padding, y * cell_scale + padding)
+        curve(pos=[(padding, y * cell_scale + padding), (cols*cell_scale + padding, y * cell_scale + padding)], radius=1)
     for x in range(cols + 1):
-        canvas.create_line(x * cell_scale + padding, padding, x * cell_scale + padding, rows * cell_scale + padding)
+        curve(pos=[(x * cell_scale + padding, padding), (x * cell_scale + padding, rows * cell_scale + padding)], radius=1)
 
+def draw_cells(grid):
+    rows, cols = grid.shape
 
     # Draw marked objects
     for i in range(rows):
         for j in range(cols):
             if (grid[i,j] == object_marker):
                 draw_cell(i, j, hidden_color)
+            else:
+                draw_cell(i, j, standard_color)
             draw_cell_label(i, j)
 
     # Draw robot
@@ -48,15 +50,23 @@ def draw_grid(grid):
     draw_cell_label(robot_pos[0], robot_pos[1])
 
 def draw_cell_label(row, col):
+    index = row * cell_width + col
+
     row_offset = row * cell_scale + padding + inner_padding + cell_scale / 2
     col_offset = col * cell_scale + padding + inner_padding + cell_scale / 2
-    canvas.create_text(col_offset, row_offset, text=("(" + str(col) + "," + str(row) + ")"))
+    row_offset = scene.height - row_offset # Invert for cooridnate system
+
+    labels[index].pos=(col_offset, row_offset)
+    labels[index].text=("(" + str(col) + "," + str(row) + ")")
 
 def draw_cell(row, col, color):
+    index = row * cell_width + col
+
     row_offset = row * cell_scale + padding + inner_padding
     col_offset = col * cell_scale + padding + inner_padding
 
-    canvas.create_rectangle(col_offset, row_offset, col_offset + cell_scale - inner_padding * 2, row_offset + cell_scale - inner_padding * 2, fill=color)
+    boxes[index].pos=(col_offset + cell_scale / 2 - inner_padding, scene.height - (row_offset + cell_scale / 2 - inner_padding))
+    boxes[index].color = color
 
 def reset_grid(grid):
     rows, cols = grid.shape
@@ -120,18 +130,34 @@ def traverse(grid, row, col):
 def quit(root):
     root.destroy()
 
+
+def setup():
+    scene.title='2031 Simulation'
+    scene.width=(cell_width*cell_scale + padding * 2)
+    scene.height=(cell_height * cell_scale + padding * 2)
+    scene.center = (scene.width / 2, scene.height / 2, 0)
+
+    print "Canvas width:", scene.width, "height:", scene.height
+    scene.visible = True
+
+    global grid
+    grid = np.mat([[0 for x in range(cell_width)] for x in range(cell_height)])
+    
+    global labels
+    labels = [label(box=False, opacity=0, color=color.white) for i in range(20)]
+
+    global boxes
+    boxes = [box(length=(cell_scale - inner_padding * 2), height=(cell_scale - inner_padding * 2)) for i in range(20)]
+
 print "Starting Simulation"
-
-root = Tk()
-root.title("2031 Simulation")
-
-canvas = Canvas(root, width=(cell_width*cell_scale + padding * 2), height=(cell_height * cell_scale + padding * 2))
-
-grid = np.mat([[0 for x in range(cell_width)] for x in range(cell_height)])
-randomize_grid(grid)
-
+setup()
 draw_grid(grid)
 
-canvas.pack()
+while True:
+    rate(1) 
+    randomize_grid(grid)
+    draw_cells(grid)
+    
 
-atexit.register(root.mainloop)
+
+
