@@ -15,14 +15,19 @@ inner_padding = 10
 standard_color = color.black
 hidden_color = color.red
 found_color = color.green
+path_color = color.cyan
 robot_color = color.blue
 
+
 object_marker = 10
+visited_marker = 17
 
 start_row = 3
 start_col = 2
 
-robot_pos = (start_row, start_col)
+robot_row = 0
+robot_col = 0
+
 
 def draw_grid(grid): 
     rows, cols = grid.shape
@@ -39,15 +44,18 @@ def draw_cells(grid):
     # Draw marked objects
     for i in range(rows):
         for j in range(cols):
-            if (grid[i,j] == object_marker):
+            marker = grid[i,j]
+            if marker == object_marker:
                 draw_cell(i, j, hidden_color)
+            elif marker == visited_marker:
+                draw_cell(i, j, path_color)
             else:
                 draw_cell(i, j, standard_color)
             draw_cell_label(i, j)
 
     # Draw robot
-    draw_cell(robot_pos[0], robot_pos[1], robot_color)
-    draw_cell_label(robot_pos[0], robot_pos[1])
+    draw_cell(robot_row, robot_col, robot_color)
+    draw_cell_label(robot_row, robot_col)
 
 def draw_cell_label(row, col):
     index = row * cell_width + col
@@ -69,6 +77,12 @@ def draw_cell(row, col, color):
     boxes[index].color = color
 
 def reset_grid(grid):
+    global robot_row
+    global robot_col
+
+    robot_row = start_row
+    robot_col = start_col
+
     rows, cols = grid.shape
     for i in range(rows):
         for j in range(cols):
@@ -130,6 +144,20 @@ def traverse(grid, row, col):
 def quit(root):
     root.destroy()
 
+def markRobotPosition():
+    grid[robot_row,robot_col] = visited_marker
+
+def solve():
+    global robot_row
+    while not robot_row == 0:
+        print "Trying to move up"
+        markRobotPosition()
+        
+        # move robot position
+        robot_row -= 1
+        draw_cells(grid)
+        sleep(1.5)
+
 
 def setup():
     scene.title='2031 Simulation'
@@ -157,6 +185,10 @@ while True:
     rate(1) 
     randomize_grid(grid)
     draw_cells(grid)
+    sleep(1)
+    solve()
+
+    sleep(5)
     
 
 
