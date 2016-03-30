@@ -21,12 +21,20 @@ robot_color = color.blue
 
 object_marker = 10
 visited_marker = 17
+found_marker = 23
 
 start_row = 3
 start_col = 2
 
-robot_row = 0
-robot_col = 0
+class DE2Robot(object):
+    def __init__(self):
+        super(DE2Robot, self).__init__()
+        print "Robot created"
+
+        self.row = start_row
+        self.col = start_col
+
+
 
 
 def draw_grid(grid): 
@@ -49,13 +57,15 @@ def draw_cells(grid):
                 draw_cell(i, j, hidden_color)
             elif marker == visited_marker:
                 draw_cell(i, j, path_color)
+            elif marker == found_marker:
+                draw_cell(i, j, found_color)
             else:
                 draw_cell(i, j, standard_color)
             draw_cell_label(i, j)
 
     # Draw robot
-    draw_cell(robot_row, robot_col, robot_color)
-    draw_cell_label(robot_row, robot_col)
+    draw_cell(robot.row, robot.col, robot_color)
+    draw_cell_label(robot.row, robot.col)
 
 def draw_cell_label(row, col):
     index = row * cell_width + col
@@ -77,11 +87,8 @@ def draw_cell(row, col, color):
     boxes[index].color = color
 
 def reset_grid(grid):
-    global robot_row
-    global robot_col
-
-    robot_row = start_row
-    robot_col = start_col
+    robot.row = start_row
+    robot.col = start_col
 
     rows, cols = grid.shape
     for i in range(rows):
@@ -145,19 +152,73 @@ def quit(root):
     root.destroy()
 
 def markRobotPosition():
-    grid[robot_row,robot_col] = visited_marker
+    grid[robot.row,robot.col] = visited_marker
+
+def finished():
+    rows, cols = grid.shape
+
+    for i in range(rows):
+        for j in range(cols):
+            if grid[i,j] == False:
+                return False
+
+    print "Finished!"
+    sleep(10000)
+    return True
 
 def solve():
-    global robot_row
-    while not robot_row == 0:
-        print "Trying to move up"
-        markRobotPosition()
-        
-        # move robot position
-        robot_row -= 1
-        draw_cells(grid)
-        sleep(1.5)
+    depthFirstSearch(grid, robot.row, robot.col, True)
 
+    draw_cells(grid)
+
+    print "Solving finished!"
+
+def depthFirstSearch(grid, row, col, base_case=False):
+    if finished():
+        return False
+    print "Calling DFS for pos: ", row, ",", col
+    if (row < 0 or row > cell_height - 1):
+        print "Out of bounds row"
+        return False
+    elif (col < 0 or col > cell_width - 1):
+        print "Out of bounds col"
+        return False
+    elif grid[row, col] == visited_marker:
+        print "Already visited"
+        return False
+    elif grid[row, col] == found_marker:
+        print "Already found"
+        return False
+    elif grid[row, col] == object_marker:
+        print "New object!"
+        #todo try find closest over multiple squares and make sure correct sonar side
+        grid[row, col] = found_marker
+        print "Object found! Pos: ", row, ",", col
+        return False
+
+    print "New position!"
+
+    robot.row = row
+    robot.col = col
+ 
+    markRobotPosition()
+
+    draw_cells(grid)
+    sleep(.1)
+
+    possible_moves = [(row, col+1), (row, col-1), (row+1, col), (row-1, col)]
+
+    for move in possible_moves:
+        sleep_time = 0
+        if depthFirstSearch(grid, move[0], move[1]):
+            sleep_time = .2
+        #move back if needed
+        robot.row = row
+        robot.col = col
+        draw_cells(grid)
+        sleep(sleep_time)
+
+    return True
 
 def setup():
     scene.title='2031 Simulation'
@@ -177,6 +238,9 @@ def setup():
     global boxes
     boxes = [box(length=(cell_scale - inner_padding * 2), height=(cell_scale - inner_padding * 2)) for i in range(20)]
 
+    global robot
+    robot = DE2Robot()
+
 print "Starting Simulation"
 setup()
 draw_grid(grid)
@@ -188,7 +252,7 @@ while True:
     sleep(1)
     solve()
 
-    sleep(5)
+    sleep(500)
     
 
 
