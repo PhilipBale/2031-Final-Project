@@ -144,9 +144,9 @@ def traverse(grid, row, col):
     grid[row, col] = spot_marked
 
     traverse(grid, row, col + 1)
+    traverse(grid, row - 1, col)
     traverse(grid, row, col - 1) 
     traverse(grid, row + 1, col)
-    traverse(grid, row - 1, col)
 
 def quit(root):
     root.destroy()
@@ -200,18 +200,37 @@ def depthFirstSearch(grid, row, col, base_case=False):
 
     robot.row = row
     robot.col = col
- 
+
     markRobotPosition()
 
     draw_cells(grid)
-    sleep(.1)
 
     possible_moves = [(row, col+1), (row, col-1), (row+1, col), (row-1, col)]
 
+    #check before moving to optimize
     for move in possible_moves:
         sleep_time = 0
+
+        if (move[0] < 0 or move[0] > cell_height - 1):
+            continue
+        elif (move[1] < 0 or move[1] > cell_width - 1):
+            continue
+        
+        if grid[move[0], move[1]] == object_marker:
+            print "New object!"
+            #todo try find closest over multiple squares and make sure correct sonar side
+            grid[move[0], move[1]] = found_marker
+            print "Object found! Pos: ", move[0], ",", move[1] 
+            sleep_time = .1
+
+        sleep(sleep_time)
+
+    for move in possible_moves:
+        sleep_time = 0
+
         if depthFirstSearch(grid, move[0], move[1]):
-            sleep_time = .2
+            sleep_time = .1
+
         #move back if needed
         robot.row = row
         robot.col = col
